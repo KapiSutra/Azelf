@@ -4,7 +4,7 @@
 
 #include "Modules/ModuleManager.h"
 
-class FAzelfModule : public IModuleInterface
+class FAzelfModule final : public IModuleInterface
 {
 public:
 

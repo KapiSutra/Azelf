@@ -6,7 +6,7 @@ public class Azelf : ModuleRules
 {
 	public Azelf(ReadOnlyTargetRules Target) : base(Target)
 	{
-		PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
+		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
 		PublicIncludePaths.AddRange(
 			new string[]
@@ -25,18 +25,20 @@ public class Azelf : ModuleRules
 
 
 		PublicDependencyModuleNames.AddRange(
-			new string[]
+			new[]
 			{
 				"Core",
 				// ... add other public dependencies that you statically link with here ...
 				"NavigationSystem",
 				"AIModule",
+				"NetCore",
+				"GameplayAbilities",
 			}
 		);
 
 
 		PrivateDependencyModuleNames.AddRange(
-			new string[]
+			new[]
 			{
 				"CoreUObject",
 				"Engine",
