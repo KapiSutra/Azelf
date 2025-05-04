@@ -7,8 +7,7 @@
 #include "GameFramework/Pawn.h"
 #include "AzelfPlayerSelf.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FAzelfPlayerSelfAvatarChangeDelegate, APawn*, OldAvatar, APawn*, NewAvatar)
-;
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FAzelfSelfAvatarChangeDelegate, APawn*, OldAvatar, APawn*, NewAvatar);
 
 UCLASS()
 class AZELF_API AAzelfPlayerSelf : public APawn, public IAbilitySystemInterface
@@ -26,11 +25,10 @@ protected:
     virtual void PossessedBy(AController* NewController) override;
     virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
     virtual UAbilitySystemComponent* GetAbilitySystemComponent() const override;
-    virtual void AddMovementInput(FVector WorldDirection, float ScaleValue = 1, bool bForce = false) override;
 
 public:
     UPROPERTY(BlueprintAssignable, Category="Azelf")
-    FAzelfPlayerSelfAvatarChangeDelegate OnAvatarChanged;
+    FAzelfSelfAvatarChangeDelegate OnAvatarChanged;
 
 protected:
     UPROPERTY(BlueprintReadOnly, Category="Azelf", ReplicatedUsing=OnRep_Avatar)
@@ -45,9 +43,11 @@ protected:
     UFUNCTION(BlueprintPure, Category="Azelf")
     APlayerController* GetSelfPlayerController() const;
 
-    UFUNCTION(Server, Reliable, BlueprintCallable)
-    void ServerSetAvatarAsAutonomousProxy();
+public:
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category="Azelf", meta=(DeterminesOutputType=PawnClass))
+    APawn* Deploy(UPARAM(meta=(MustImplement ="/Script/Azelf.AzelfAvatarInterface"))
+        TSubclassOf<APawn> PawnClass);
 
-    UFUNCTION(Client, Reliable,BlueprintCallable)
-    void ClientSetAvatarAsAutoProxy();
+    UFUNCTION(BlueprintCallable, BlueprintAuthorityOnly, Category="Azelf")
+    bool Control(APawn* TargetPawn);
 };

@@ -4,6 +4,7 @@
 #include "AzelfPlayerSelf.h"
 
 #include "AbilitySystemBlueprintLibrary.h"
+#include "AzelfAvatarInterface.h"
 #include "GameFramework/PlayerState.h"
 #include "Net/UnrealNetwork.h"
 #include "Net/Core/PushModel/PushModel.h"
@@ -22,7 +23,7 @@ void AAzelfPlayerSelf::BeginPlay()
     Super::BeginPlay();
 }
 
-void AAzelfPlayerSelf::Tick(float DeltaSeconds)
+void AAzelfPlayerSelf::Tick(const float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
 }
@@ -48,13 +49,6 @@ UAbilitySystemComponent* AAzelfPlayerSelf::GetAbilitySystemComponent() const
     return UAbilitySystemBlueprintLibrary::GetAbilitySystemComponent(GetPlayerState());
 }
 
-void AAzelfPlayerSelf::AddMovementInput(const FVector WorldDirection, float ScaleValue, const bool bForce)
-{
-    Super::AddMovementInput(WorldDirection, ScaleValue, bForce);
-    Avatar->AddMovementInput(WorldDirection, ScaleValue, bForce);
-}
-
-
 void AAzelfPlayerSelf::SetAvatar_Implementation(APawn* NewAvatar)
 {
     const auto OldAvatar = Avatar;
@@ -67,10 +61,6 @@ void AAzelfPlayerSelf::SetAvatar_Implementation(APawn* NewAvatar)
 
 void AAzelfPlayerSelf::OnRep_Avatar_Implementation(APawn* OldAvatar)
 {
-    if (HasAuthority() == false)
-    {
-        Avatar->SetRole(ROLE_AutonomousProxy);
-    }
     OnAvatarChanged.Broadcast(OldAvatar, Avatar);
 }
 
@@ -83,15 +73,38 @@ APlayerController* AAzelfPlayerSelf::GetSelfPlayerController() const
     return nullptr;
 }
 
-void AAzelfPlayerSelf::ServerSetAvatarAsAutonomousProxy_Implementation()
+APawn* AAzelfPlayerSelf::Deploy(const TSubclassOf<APawn> PawnClass)
 {
-    ensure(Avatar);
-    Avatar->SetAutonomousProxy(true);
-    ClientSetAvatarAsAutoProxy();
+    ensure(PawnClass);
+    ensure(PawnClass->ImplementsInterface(UAzelfAvatarInterface::StaticClass()));
+
+    FActorSpawnParameters Params{};
+    Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButDontSpawnIfColliding;
+    Params.TransformScaleMethod = ESpawnActorScaleMethod::OverrideRootScale;
+    Params.Instigator = this;
+    FTransform SpawnTransform = GetTransform();
+    SpawnTransform.SetScale3D(FVector(1.f));
+    const auto NewPawn = GetWorld()->SpawnActor<APawn>(PawnClass, SpawnTransform, Params);
+    return NewPawn;
 }
 
-void AAzelfPlayerSelf::ClientSetAvatarAsAutoProxy_Implementation()
+bool AAzelfPlayerSelf::Control(APawn* TargetPawn)
 {
-    // Avatar->bExchangedRoles = false;
-    // Avatar->ExchangeNetRoles(true);
+    if (!TargetPawn || !TargetPawn->Implements<IAzelfAvatarInterface>())
+    {
+        checkNoEntry();
+        return false;
+    }
+
+    SetAvatar(TargetPawn);
+    constexpr FAttachmentTransformRules Rule{
+        EAttachmentRule::SnapToTarget,
+        EAttachmentRule::SnapToTarget,
+        EAttachmentRule::SnapToTarget,
+        true
+    };
+    AttachToActor(TargetPawn, Rule);
+    const auto PC = GetSelfPlayerController();
+    PC->Possess(TargetPawn);
+    return true;
 }
