@@ -90,14 +90,14 @@ APawn* AAzelfPlayerSelf::Deploy(const TSubclassOf<APawn> PawnClass)
 
 bool AAzelfPlayerSelf::Control(APawn* TargetPawn)
 {
-    if (!TargetPawn || !TargetPawn->Implements<IAzelfAvatarInterface>())
+    if (!TargetPawn || !TargetPawn->Implements<UAzelfAvatarInterface>())
     {
         checkNoEntry();
         return false;
     }
 
     SetAvatar(TargetPawn);
-    constexpr FAttachmentTransformRules Rule{
+    const FAttachmentTransformRules Rule{
         EAttachmentRule::SnapToTarget,
         EAttachmentRule::SnapToTarget,
         EAttachmentRule::SnapToTarget,

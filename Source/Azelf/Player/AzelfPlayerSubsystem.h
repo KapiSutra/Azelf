@@ -16,7 +16,4 @@ class AZELF_API UAzelfPlayerSubsystem : public UGameInstanceSubsystem
 
 public:
     static UAzelfPlayerSubsystem* Get(const UObject& WorldContextObject);
-
-    UFUNCTION(BlueprintCallable, Category = "Azelf", meta=(DeterminesOutputType=PawnClass))
-    
 };
